@@ -14,9 +14,7 @@ df = pd.read_csv('./cancer/data.csv')
 
 df_std = StandardScaler().fit_transform(df.drop(['id','diagnosis','Unnamed: 32'], axis = 1))
 label = np.array([0 for x in range(len(df_std))])
-pca = PCA(n_components=2)
-pca.fit(df_std)
-PCA_df = pca.transform(df_std)
+
 print(len(df_std))
 for x in range(len(label)):
 	if df["diagnosis"][x]== "M":
@@ -24,25 +22,26 @@ for x in range(len(label)):
 	else:
 		label[x] = -1
 
-X_train, X_test, Y_train, Y_test = train_test_split(PCA_df, label,test_size=1/3, random_state=0)
-
+X_train, X_test, Y_train, Y_test = train_test_split(df_std, label,test_size=1/3, random_state=0)
+print(len(X_train[0]))
 epochs = 1
 learning_rate = 0.00001
-w1 = 0
-w2 = 0
+w =[0 for x in range(30)]
 t0 = time.time()
-while epochs < 1000:
+while epochs < 100:
 	for i in range(len(X_train)):
-		pred = w1*X_train[i][0] + w2*X_train[i][1]
+		pred = 0
+		for j in range(30):
+			pred += w[j]*X_train[i][j] 
 		
 		if pred*Y_train[i] < 1:
-			w1 = w1 + learning_rate*(Y_train[i]*X_train[i][0] - 2 *  w1)
-			w2 = w2 + learning_rate*(Y_train[i]*X_train[i][1] - 2 *  w2)
+			for j in range(30):
+				w[j] = w[j] + learning_rate*(Y_train[i]*X_train[i][j]-0.02*w[j])
 		else:
-			w1 = w1 - learning_rate*(2*w1)
-			w2 = w2 - learning_rate*(2*w2)
+			for j in range(30):
+				w[j] = w[j] - learning_rate*(0.02*w[j])
 	epochs += 1
-print(w1,w2)
+
 t1 = time.time()
 print("time is :" + str(t1-t0))
 
@@ -52,7 +51,9 @@ FPcount = 0
 FNcount = 0
 
 for i in range(len(X_test)):
-	pred = w1*X_test[i][0] + w2*X_test[i][1]
+	pred = 0
+	for j in range(30):
+		pred += w[j]*X_test[i][j] 
 	if pred*Y_test[i]>=0:
 		if pred >= 0:
 			TPcount += 1
